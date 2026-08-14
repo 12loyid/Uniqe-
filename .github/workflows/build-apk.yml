@@ -1,10 +1,10 @@
  name: Build Unique Design APK
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
-  workflow_dispatch:
 
 jobs:
   build:
@@ -14,31 +14,42 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.13'
-
       - name: Check project files
         run: |
           echo "Project files:"
           ls -la
-          echo "App folder:"
+          echo "App files:"
           ls -la app || true
 
-      - name: Build Debug APK
+      - name: Make Gradle executable
         run: |
-          gradle assembleDebug --stacktrace
+          if [ -f "./gradlew" ]; then
+            chmod +x ./gradlew
+          else
+            echo "gradlew not found - using Gradle installed on runner"
+          fi
+
+      - name: Build APK
+        run: |
+          if [ -f "./gradlew" ]; then
+            ./gradlew assembleDebug --no-daemon
+          else
+            gradle assembleDebug --no-daemon
+          fi
+
+      - name: Find APK
+        run: |
+          find . -type f -name "*.apk" -print
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Unique-Design-APK
-          path: app/build/outputs/apk/debug/*.apk
+          path: "**/build/outputs/apk/**/*.apk"
           if-no-files-found: error
