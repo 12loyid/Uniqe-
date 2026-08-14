@@ -14,27 +14,37 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Check files
+      - name: Check project files
         run: |
-          echo "Root files:"
+          echo "=== Project files ==="
           ls -la
-          echo "Gradle files:"
-          find . -maxdepth 2 -type f \( -name "gradlew" -o -name "build.gradle*" -o -name "settings.gradle*" \) -print
+          echo "=== App folder ==="
+          ls -la app || true
+          echo "=== Gradle files ==="
+          ls -la gradlew* || true
 
       - name: Make Gradle executable
         run: chmod +x ./gradlew
 
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug --no-daemon
+      - name: Build APK
+        run: ./gradlew :app:assembleDebug --stacktrace
+
+      - name: Find APK
+        run: |
+          echo "=== Searching for APK ==="
+          find . -type f -name "*.apk" -print
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Unique-Design-APK
-          path: "**/build/outputs/apk/**/*.apk" 
+          path: |
+            app/build/outputs/apk/**/*.apk
+            app/build/outputs/apk/*.apk
+          if-no-files-found: error 
